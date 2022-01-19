@@ -94,8 +94,8 @@ Vagrant.configure("2") do |config|
     libvirt.qemuargs :value => 'isa-applesmc,osk=ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc'
 
     ## TODO: How to package & reference these files in Vagrant .box?
-    libvirt.loader = '/media/nvme_homedirs/trinitronx/src/pub/OSX-KVM/OVMF_CODE.fd'
     libvirt.nvram = '/media/nvme_homedirs/trinitronx/src/pub/OSX-KVM/OVMF_VARS-1024x768.fd'
+    libvirt.loader = '/usr/share/OVMF/OVMF_CODE.fd'
 #    libvirt.qemuargs :value => "-drive"
 #    libvirt.qemuargs :value => "file=OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on"
 #    libvirt.qemuargs :value => "-drive"
