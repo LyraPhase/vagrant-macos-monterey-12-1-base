@@ -96,7 +96,7 @@ Vagrant.configure("2") do |config|
 
     ## TODO: How to package & reference these files in Vagrant .box?
     libvirt.loader = '/usr/share/OVMF/OVMF_CODE.fd'
-    libvirt.nvram = '/var/lib/libvirt/lyraphase-runner_macos-12-1_OVMF_VARS-1024x768.fd'
+    libvirt.nvram = '/var/lib/libvirt/qemu/nvram/lyraphase-runner_macos-12-1_OVMF_VARS-1024x768.fd'
 #    libvirt.qemuargs :value => "-drive"
 #    libvirt.qemuargs :value => "file=OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on"
 #    libvirt.qemuargs :value => "-drive"
