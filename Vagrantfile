@@ -4,6 +4,7 @@
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
 
 Vagrant.configure("2") do |config|
+  config.ssh.insert_key = false if ENV.fetch('VAGRANT_PACKAGE', false) == 'true'
 
   config.vm.provider :libvirt do |libvirt|
 
@@ -123,7 +124,7 @@ Vagrant.configure("2") do |config|
   config.vm.boot_timeout = 1200
   # macOS root FS is Read-Only... disable default /vagrant share, re-map to /tmp/vagrant
   config.vm.synced_folder ".", "/vagrant", disabled: true
-  config.vm.synced_folder ".", "/tmp/vagrant"
+  config.vm.synced_folder ".", "/tmp/vagrant" unless ENV.fetch('VAGRANT_PACKAGE', false) == 'true'
 end
 
 
