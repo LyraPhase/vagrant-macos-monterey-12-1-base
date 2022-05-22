@@ -111,7 +111,6 @@ Vagrant.configure("2") do |config|
     libvirt.qemuargs :value => "-device"
     libvirt.qemuargs :value => 'isa-applesmc,osk=ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc'
 
-    ## TODO: How to package & reference these files in Vagrant .box?
     libvirt.loader = '/usr/share/OVMF/OVMF_CODE.fd'
     libvirt.nvram = '/var/lib/libvirt/qemu/nvram/lyraphase-runner_macos-12-1_OVMF_VARS-1024x768.fd'
 #    libvirt.qemuargs :value => "-drive"
