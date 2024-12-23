@@ -111,8 +111,11 @@ Vagrant.configure("2") do |config|
     libvirt.qemuargs :value => "-device"
     libvirt.qemuargs :value => 'isa-applesmc,osk=ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc'
 
-    libvirt.loader = '/usr/share/OVMF/OVMF_CODE.fd'
-    libvirt.nvram = '/var/lib/libvirt/qemu/nvram/lyraphase-runner_macos-12-1_OVMF_VARS-1024x768.fd'
+    #libvirt.loader = '/usr/share/OVMF/x64/OVMF_CODE.4m.fd' ## Symlinked to edk2 path, but doesn't match libvirtd strict matching
+    ## Must match firmware paths in json: /usr/share/qemu/firmware/60-edk2-ovmf-x86_64-4m.json
+    libvirt.loader = '/usr/share/edk2/x64/OVMF_CODE.4m.fd'
+    #libvirt.nvram = '/var/lib/libvirt/qemu/nvram/lyraphase-runner_macos-12-1_OVMF_VARS-1024x768.fd'
+    #libvirt.nvram_template = '/usr/share/OVMF/x64/OVMF_VARS.4m.fd'
 #    libvirt.qemuargs :value => "-drive"
 #    libvirt.qemuargs :value => "file=OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on"
 #    libvirt.qemuargs :value => "-drive"
