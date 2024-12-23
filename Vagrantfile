@@ -103,9 +103,9 @@ Vagrant.configure("2") do |config|
     libvirt.qemuargs :value => "-smp"
     libvirt.qemuargs :value => "cores=#{CPU_CORES},threads=#{CPU_THREADS},sockets=#{CPU_SOCKETS}"
     libvirt.qemuargs :value => "-device"
-    libvirt.qemuargs :value => "usb-ehci,id=ehci"
+    libvirt.qemuargs :value => "usb-ehci,id=ehci,addr=0x1b.0"
     libvirt.qemuargs :value => "-device"
-    libvirt.qemuargs :value => "nec-usb-xhci,id=xhci"
+    libvirt.qemuargs :value => "nec-usb-xhci,id=xhci,addr=0x1c.0"
     libvirt.qemuargs :value => "-global"
     libvirt.qemuargs :value => "nec-usb-xhci.msi=off"
     libvirt.qemuargs :value => "-device"
@@ -135,7 +135,7 @@ Vagrant.configure("2") do |config|
       libvirt.qemuargs :value => "hda-duplex,audiodev=audio1"
     end
     libvirt.qemuargs :value => "-device"
-    libvirt.qemuargs :value => "ich9-ahci,id=sata"
+    libvirt.qemuargs :value => "ich9-ahci,id=sata,addr=0x1f.4"
 
     # If libvirt.input settings don't work... these do
     # See: https://github.com/vagrant-libvirt/vagrant-libvirt/issues/1092#issuecomment-1016003272
