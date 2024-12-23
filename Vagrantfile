@@ -123,10 +123,17 @@ Vagrant.configure("2") do |config|
 
     libvirt.qemuargs :value => "-smbios"
     libvirt.qemuargs :value => "type=2"
-    libvirt.qemuargs :value => "-device"
-    libvirt.qemuargs :value => "ich9-intel-hda"
-    libvirt.qemuargs :value => "-device"
-    libvirt.qemuargs :value => "hda-duplex"
+
+    PULSEAUDIO_SOCKET = File.join(ENV['XDG_RUNTIME_DIR'], 'pulse', 'native') unless ENV['XDG_RUNTIME_DIR'].nil?
+
+    if !PULSEAUDIO_SOCKET.nil? && File.exist?(PULSEAUDIO_SOCKET) && File.socket?(PULSEAUDIO_SOCKET)
+      libvirt.qemuargs :value => "-device"
+      libvirt.qemuargs :value => "ich9-intel-hda,id=hda1,addr=0x1d.0"
+      libvirt.qemuargs :value => "-audiodev"
+      libvirt.qemuargs :value => "id=audio1,driver=pa,server=unix:#{PULSEAUDIO_SOCKET}"
+      libvirt.qemuargs :value => "-device"
+      libvirt.qemuargs :value => "hda-duplex,audiodev=audio1"
+    end
     libvirt.qemuargs :value => "-device"
     libvirt.qemuargs :value => "ich9-ahci,id=sata"
 
