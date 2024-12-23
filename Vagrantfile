@@ -87,7 +87,7 @@ Vagrant.configure("2") do |config|
     libvirt_cpu_feature_format += opt_cpu_features.split(',').map{ |f|  { name: f, policy: 'optional' } }
     libvirt.cpu_features = libvirt_cpu_feature_format
 
-    libvirt.machine_type = "pc-q35-4.2"
+    libvirt.machine_type = "q35"
     libvirt.machine_arch = "x86_64"
 
     # Serial pty
