@@ -143,7 +143,23 @@ Vagrant.configure("2") do |config|
     libvirt.qemuargs :value => "usb-tablet"
     libvirt.qemuargs :value => "-device"
     libvirt.qemuargs :value => "usb-kbd"
+
+   # Network
+   libvirt.management_network_pci_bus = '0x00'
+   libvirt.management_network_pci_slot = '0x04'
   end
+
+   # Network
+   # Ensure nic has bus 0x0 and slot 0x0y, so nic is built-in & App-store works
+   # Source: https://github.com/kholia/OSX-KVM/blob/a9b20147deef2ca9ffe43567aba51853a18150f2/macOS-libvirt-Catalina.xml#L141
+   config.vm.network :private_network, :type => 'dhcp',
+     :autostart => true,
+     :bus => '0x00',
+     :slot => '0x03'
+
+#    config.vm.network :public_network, :dev => "virbr1",
+#      :mode => "bridge",
+#      :type => "bridge"
 
   # Replace this with your private Vagrant Box name and/or URL
   config.vm.box = "lyraphase-runner/macos-monterey-base"
