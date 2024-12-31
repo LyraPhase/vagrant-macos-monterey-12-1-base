@@ -167,7 +167,8 @@ Vagrant.configure("2") do |config|
   config.vm.boot_timeout = 1200
   # macOS root FS is Read-Only... disable default /vagrant share, re-map to /tmp/vagrant
   config.vm.synced_folder ".", "/vagrant", disabled: true
-  config.vm.synced_folder ".", "/tmp/vagrant" unless ENV.fetch('VAGRANT_PACKAGE', false) == 'true'
+  do_nfs_export = (ENV.fetch('VAGRANT_NFS_EXPORT', true) == 'true')
+  config.vm.synced_folder ".", "/tmp/vagrant", nfs_version: 4, nfs_export: do_nfs_export unless ENV.fetch('VAGRANT_PACKAGE', false) == 'true'
 end
 
 
