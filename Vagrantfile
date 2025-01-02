@@ -103,11 +103,13 @@ Vagrant.configure("2") do |config|
     libvirt.qemuargs :value => "-smp"
     libvirt.qemuargs :value => "cores=#{CPU_CORES},threads=#{CPU_THREADS},sockets=#{CPU_SOCKETS}"
     libvirt.qemuargs :value => "-device"
-    libvirt.qemuargs :value => "usb-ehci,id=ehci,addr=0x1b.0"
+    libvirt.qemuargs :value => "usb-ehci,id=ehci,addr=0x1c.0"
     libvirt.qemuargs :value => "-device"
-    libvirt.qemuargs :value => "nec-usb-xhci,id=xhci,addr=0x1c.0"
-    libvirt.qemuargs :value => "-global"
-    libvirt.qemuargs :value => "nec-usb-xhci.msi=off"
+    libvirt.qemuargs :value => "qemu-xhci,id=xhci,addr=0x1d.0,p2=4,p3=2"
+## Caused audio to crackle... seems qemu-xhci is more performant
+#    libvirt.qemuargs :value => "nec-usb-xhci,id=xhci,addr=0x1d.0"
+#    libvirt.qemuargs :value => "-global"
+#    libvirt.qemuargs :value => "nec-usb-xhci.msi=off"
     libvirt.qemuargs :value => "-device"
     libvirt.qemuargs :value => 'isa-applesmc,osk=ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc'
 
@@ -127,12 +129,16 @@ Vagrant.configure("2") do |config|
     PULSEAUDIO_SOCKET = File.join(ENV['XDG_RUNTIME_DIR'], 'pulse', 'native') unless ENV['XDG_RUNTIME_DIR'].nil?
 
     if !PULSEAUDIO_SOCKET.nil? && File.exist?(PULSEAUDIO_SOCKET) && File.socket?(PULSEAUDIO_SOCKET)
-      libvirt.qemuargs :value => "-device"
-      libvirt.qemuargs :value => "ich9-intel-hda,id=hda1,addr=0x1d.0"
+      # libvirt.qemuargs :value => "-device"
+      # libvirt.qemuargs :value => "ich9-usb-uhci1,id=uhci,bus=pcie.0,addr=0x1b.0"
       libvirt.qemuargs :value => "-audiodev"
-      libvirt.qemuargs :value => "id=audio1,driver=pa,server=unix:#{PULSEAUDIO_SOCKET}"
+      libvirt.qemuargs :value => "id=snd0,driver=pa,server=unix:#{PULSEAUDIO_SOCKET},in.stream-name=\"macOS Input\",out.stream-name=\"macOS Output\",out.mixing-engine=off,timer-period=2500,in.buffer-length=10000,out.buffer-length=10000"
       libvirt.qemuargs :value => "-device"
-      libvirt.qemuargs :value => "hda-duplex,audiodev=audio1"
+      libvirt.qemuargs :value => "usb-audio,id=usbaudio1,audiodev=snd0,bus=xhci.0"
+## No working audio from ich9-intel-hda in macOS Monterey -> use usb-audio instead
+#      libvirt.qemuargs :value => "ich9-intel-hda,id=hda1,bus=pcie.0,addr=0x1b.0"
+#      libvirt.qemuargs :value => "-device"
+#      libvirt.qemuargs :value => "hda-duplex,audiodev=audio1,bus=hda1.0,cad=0"
     end
     libvirt.qemuargs :value => "-device"
     libvirt.qemuargs :value => "ich9-ahci,id=sata,addr=0x1f.4"
