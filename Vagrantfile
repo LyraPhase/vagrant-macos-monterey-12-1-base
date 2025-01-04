@@ -18,7 +18,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+require 'logger'
+
+logger = Logger.new(STDOUT, formatter: proc {|severity, datetime, progname, msg|
+  sprintf "%5s Vagrantfile: %s\n", severity, msg
+})
+case ENV.fetch('VAGRANT_LOG', 'error').downcase.to_s
+when 'trace'
+  logger.level = Logger::TRACE
+when 'debug'
+  logger.level = Logger::DEBUG
+when 'info'
+  logger.level = Logger::INFO
+when 'warn'
+  logger.level = Logger::WARN
+when 'error'
+  logger.level = Logger::ERROR
+when 'fatal'
+  logger.level = Logger::FATAL
+end
+
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
+
+def audio_socket_exists?(s)
+  return !s.nil? && File.exist?(s) && File.socket?(s)
+end
 
 Vagrant.configure("2") do |config|
   config.ssh.insert_key = false if ENV.fetch('VAGRANT_PACKAGE', false).to_s == 'true'
@@ -144,19 +168,63 @@ Vagrant.configure("2") do |config|
     libvirt.qemuargs :value => "-smbios"
     libvirt.qemuargs :value => "type=2"
 
+    PIPEWIRE_REMOTE = ENV.fetch('PIPEWIRE_REMOTE', 'pipewire-0')
+    PIPEWIRE_SOCKET = File.join(ENV['XDG_RUNTIME_DIR'], PIPEWIRE_REMOTE) unless ENV['XDG_RUNTIME_DIR'].nil?
     PULSEAUDIO_SOCKET = File.join(ENV['XDG_RUNTIME_DIR'], 'pulse', 'native') unless ENV['XDG_RUNTIME_DIR'].nil?
 
-    if !PULSEAUDIO_SOCKET.nil? && File.exist?(PULSEAUDIO_SOCKET) && File.socket?(PULSEAUDIO_SOCKET)
-      # libvirt.qemuargs :value => "-device"
-      # libvirt.qemuargs :value => "ich9-usb-uhci1,id=uhci,bus=pcie.0,addr=0x1b.0"
-      libvirt.qemuargs :value => "-audiodev"
-      libvirt.qemuargs :value => "id=snd0,driver=pa,server=unix:#{PULSEAUDIO_SOCKET},in.stream-name=\"macOS Input\",out.stream-name=\"macOS Output\",out.mixing-engine=off,timer-period=2500,in.buffer-length=10000,out.buffer-length=10000"
-      libvirt.qemuargs :value => "-device"
-      libvirt.qemuargs :value => "usb-audio,id=usbaudio1,audiodev=snd0,bus=xhci.0"
-## No working audio from ich9-intel-hda in macOS Monterey -> use usb-audio instead
-#      libvirt.qemuargs :value => "ich9-intel-hda,id=hda1,bus=pcie.0,addr=0x1b.0"
-#      libvirt.qemuargs :value => "-device"
-#      libvirt.qemuargs :value => "hda-duplex,audiodev=audio1,bus=hda1.0,cad=0"
+    if audio_socket_exists?(PIPEWIRE_SOCKET) || audio_socket_exists?(PULSEAUDIO_SOCKET)
+      # Default to pulseaudio
+      VAGRANT_LIBVIRT_AUDIO_BACKEND = ENV.fetch('VAGRANT_LIBVIRT_AUDIO_BACKEND', 'pulseaudio')
+      unless VAGRANT_LIBVIRT_AUDIO_BACKEND == 'none'
+        libvirt.qemuargs :value => "-device"
+        libvirt.qemuargs :value => "usb-audio,id=usbaudio1,audiodev=snd0,bus=xhci.0"
+      end
+
+      logger.debug "---------------------------------------------------------------------"
+      logger.debug "config.vm.hostname = #{config.vm.hostname}"
+      logger.debug "libvirt.default_prefix = #{libvirt.default_prefix}"
+      logger.debug "audio_socket_exists?(PIPEWIRE_SOCKET) = #{audio_socket_exists?(PIPEWIRE_SOCKET)}"
+      logger.debug "audio_socket_exists?(PULSEAUDIO_SOCKET) = #{audio_socket_exists?(PULSEAUDIO_SOCKET)}"
+      logger.debug "---------------------------------------------------------------------"
+
+      DEFAULT_AUDIODEV_OPTIONS = "in.stream-name=\"macOS Input\",out.stream-name=\"macOS Output\",out.mixing-engine=off,out.fixed-settings=off,timer-period=2500,in.buffer-length=10000,out.buffer-length=10000"
+
+      case VAGRANT_LIBVIRT_AUDIO_BACKEND
+      when 'pipewire', 'pw'
+        unless audio_socket_exists?(PIPEWIRE_SOCKET)
+          logger.error("VAGRANT_LIBVIRT_AUDIO_BACKEND selected pipewire, but socket does not exist: #{PIPEWIRE_SOCKET}")
+          logger.error("VAGRANT_LIBVIRT_AUDIO_BACKEND valid values: pw, pipewire, pulse, pulseaudio, none")
+          logger.error("To boot the VM without audio, set VAGRANT_LIBVIRT_AUDIO_BACKEND=none")
+          raise 'ERROR: could not detect pipewire socket'
+        end
+        logger.info "Using pipewire audio backend"
+        logger.warn "Glitchy or scratchy audio bugs may be present depending on QEMU version"
+
+        libvirt.qemuargs :value => "-audiodev"
+        libvirt.qemuargs :value => "id=snd0,driver=pipewire,#{DEFAULT_AUDIODEV_OPTIONS}"
+        #libvirt.qemuenv QEMU_AUDIO_DRV: 'pw'
+        libvirt.qemuenv PIPEWIRE_DEBUG: 'D'
+        libvirt.qemuenv PIPEWIRE_RUNTIME_DIR: ENV.fetch('XDG_RUNTIME_DIR', File.join('run', 'user', '1000'))
+      when 'pulseaudio', 'pulse'
+        unless audio_socket_exists?(PULSEAUDIO_SOCKET)
+          logger.error("VAGRANT_LIBVIRT_AUDIO_BACKEND selected pulseaudio, but socket does not exist: #{PULSEAUDIO_SOCKET}")
+          logger.error("VAGRANT_LIBVIRT_AUDIO_BACKEND valid values: pw, pipewire, pulse, pulseaudio, none")
+          logger.error("To boot the VM without audio, set VAGRANT_LIBVIRT_AUDIO_BACKEND=none")
+          raise 'ERROR: could not detect pulseaudio socket'
+        end
+        logger.info "Using pulseaudio audio backend"
+
+        # libvirt.qemuargs :value => "-device"
+        # libvirt.qemuargs :value => "ich9-usb-uhci1,id=uhci,bus=pcie.0,addr=0x1b.0"
+        libvirt.qemuargs :value => "-audiodev"
+        libvirt.qemuargs :value => "id=snd0,driver=pa,server=unix:#{PULSEAUDIO_SOCKET},#{DEFAULT_AUDIODEV_OPTIONS}"
+      ## No working audio from ich9-intel-hda in macOS Monterey -> use usb-audio instead
+      #      libvirt.qemuargs :value => "ich9-intel-hda,id=hda1,bus=pcie.0,addr=0x1b.0"
+      #      libvirt.qemuargs :value => "-device"
+      #      libvirt.qemuargs :value => "hda-duplex,audiodev=audio1,bus=hda1.0,cad=0"
+      when 'none'
+        logger.info "Using NO audio backend"
+      end
     end
     libvirt.qemuargs :value => "-device"
     libvirt.qemuargs :value => "ich9-ahci,id=sata,addr=0x1f.4"
