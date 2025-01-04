@@ -43,6 +43,7 @@ ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
 def audio_socket_exists?(s)
   return !s.nil? && File.exist?(s) && File.socket?(s)
 end
+BOX_DIR = File.expand_path(File.dirname(__FILE__))
 
 Vagrant.configure("2") do |config|
   config.ssh.insert_key = false if ENV.fetch('VAGRANT_PACKAGE', false).to_s == 'true'
@@ -160,10 +161,11 @@ Vagrant.configure("2") do |config|
     libvirt.loader = '/usr/share/edk2/x64/OVMF_CODE.4m.fd'
     #libvirt.nvram = '/var/lib/libvirt/qemu/nvram/lyraphase-runner_macos-12-1_OVMF_VARS-1024x768.fd'
     libvirt.nvram_template = '/usr/share/edk2/x64/OVMF_VARS.4m.fd'
+## TODO: Try OS package provided versions but Default to pre-packaged .box directory versions
 #    libvirt.qemuargs :value => "-drive"
-#    libvirt.qemuargs :value => "file=OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on"
+#    libvirt.qemuargs :value => "file=#{BOX_DIR}/OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on"
 #    libvirt.qemuargs :value => "-drive"
-#    libvirt.qemuargs :value => "file=OVMF_VARS-1024x768.fd,if=pflash,format=raw,unit=1"
+#    libvirt.qemuargs :value => "file=#{BOX_DIR}/OVMF_VARS-1024x768.fd,if=pflash,format=raw,unit=1"
 
     libvirt.qemuargs :value => "-smbios"
     libvirt.qemuargs :value => "type=2"
