@@ -21,7 +21,12 @@
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
 
 Vagrant.configure("2") do |config|
-  config.ssh.insert_key = false if ENV.fetch('VAGRANT_PACKAGE', false) == 'true'
+  config.ssh.insert_key = false if ENV.fetch('VAGRANT_PACKAGE', false).to_s == 'true'
+
+  # Replace this with your private Vagrant Box name and/or URL
+  config.vm.box = "lyraphase-runner/macos-monterey-base"
+  config.vm.hostname = "macos-12-1.vagrantup.com"
+  config.vm.boot_timeout = 1200
 
   config.vm.provider :libvirt do |libvirt|
 
@@ -167,10 +172,6 @@ Vagrant.configure("2") do |config|
 #      :mode => "bridge",
 #      :type => "bridge"
 
-  # Replace this with your private Vagrant Box name and/or URL
-  config.vm.box = "lyraphase-runner/macos-monterey-base"
-  config.vm.hostname = "macos-12-1.vagrantup.com"
-  config.vm.boot_timeout = 1200
   # macOS root FS is Read-Only... disable default /vagrant share, re-map to /tmp/vagrant
   config.vm.synced_folder ".", "/vagrant", disabled: true
   do_nfs_export = (ENV.fetch('VAGRANT_NFS_EXPORT', true) == 'true')
