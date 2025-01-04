@@ -169,7 +169,12 @@ Vagrant.configure("2") do |config|
 
     libvirt.qemuargs :value => "-smbios"
     libvirt.qemuargs :value => "type=2"
-
+## TODO: Convert all devices to JSON syntax b/c libvirt now converts all XML to JSON qemu args
+## Because we use libvirt, we are stuck with JSON now, since everything must now
+## be specified as JSON to prevent PCI device id conflicts
+## References:
+##  - https://forum.level1techs.com/t/error-starting-domain-pcie-root-port-in-use-by-ich9-intel-hda/180287
+##  - https://www.reddit.com/r/VFIO/comments/13epr5d/comment/jjre9gk/?utm_source=share&utm_medium=web2x&context=3
     PIPEWIRE_REMOTE = ENV.fetch('PIPEWIRE_REMOTE', 'pipewire-0')
     PIPEWIRE_SOCKET = File.join(ENV['XDG_RUNTIME_DIR'], PIPEWIRE_REMOTE) unless ENV['XDG_RUNTIME_DIR'].nil?
     PULSEAUDIO_SOCKET = File.join(ENV['XDG_RUNTIME_DIR'], 'pulse', 'native') unless ENV['XDG_RUNTIME_DIR'].nil?
