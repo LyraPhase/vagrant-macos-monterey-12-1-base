@@ -29,6 +29,19 @@ Vagrant.configure("2") do |config|
   config.vm.boot_timeout = 1200
 
   config.vm.provider :libvirt do |libvirt|
+    if ENV.fetch('VAGRANT_LIBVIRT_USE_SESSION', false).to_s.downcase == 'true'
+      HOME = ENV.fetch('HOME', '~')
+      XDG_DATA_HOME = ENV.fetch('XDG_DATA_HOME', File.join(HOME, '.local', 'share'))
+      LIBVIRT_SESSION_HOME_DATA = File.join(XDG_DATA_HOME, 'libvirt', 'images')
+
+      libvirt.qemu_use_session = true
+      libvirt.uri = 'qemu:///session'
+      libvirt.system_uri = 'qemu:///system'
+      libvirt.storage_pool_path = LIBVIRT_SESSION_HOME_DATA
+      # Root user must first configure virbr0 & define a libvirt network
+      # See: https://vagrant-libvirt.github.io/vagrant-libvirt/examples.html#qemu-session-support
+      libvirt.management_network_device = 'virbr0'
+    end
 
     CPU_SOCKETS = 1
     CPU_CORES = 4
@@ -161,16 +174,27 @@ Vagrant.configure("2") do |config|
   end
 
    # Network
-   # Ensure nic has bus 0x0 and slot 0x0y, so nic is built-in & App-store works
-   # Source: https://github.com/kholia/OSX-KVM/blob/a9b20147deef2ca9ffe43567aba51853a18150f2/macOS-libvirt-Catalina.xml#L141
-   config.vm.network :private_network, :type => 'dhcp',
-     :autostart => true,
-     :bus => '0x00',
-     :slot => '0x03'
-
-#    config.vm.network :public_network, :dev => "virbr1",
-#      :mode => "bridge",
-#      :type => "bridge"
+  if ENV.fetch('VAGRANT_LIBVIRT_USE_SESSION', false).to_s.downcase == 'true'
+    # User must setup the virbr0 default network in qemu:///system for use with
+    # qemu:///session, the device must be allowed in /etc/qemu/bridge.conf
+    # AND SetUID root bit must be set on qemu-bridge-helper
+    # References:
+    # - https://wiki.qemu.org/Features/HelperNetworking
+    # - https://vagrant-libvirt.github.io/vagrant-libvirt/configuration.html#networks
+    # - https://gist.github.com/diffficult/cb8c385e646466b2a3ff129ddb886185#what-to-do-if-default-network-interface-is-not-listed
+    # - https://mike42.me/blog/2019-08-how-to-use-the-qemu-bridge-helper-on-debian-10
+    # - https://wiki.archlinux.org/title/QEMU#Bridged_networking_using_qemu-bridge-helper
+    config.vm.network :public_network, :dev => "virbr0",
+      :mode => "bridge",
+      :type => "bridge"
+  else
+    # Ensure nic has bus 0x0 and slot 0x0y, so nic is built-in & App-store works
+    # Source: https://github.com/kholia/OSX-KVM/blob/a9b20147deef2ca9ffe43567aba51853a18150f2/macOS-libvirt-Catalina.xml#L141
+    config.vm.network :private_network, :type => 'dhcp',
+      :autostart => true,
+      :bus => '0x00',
+      :slot => '0x03'
+  end
 
   # macOS root FS is Read-Only... disable default /vagrant share, re-map to /tmp/vagrant
   config.vm.synced_folder ".", "/vagrant", disabled: true
