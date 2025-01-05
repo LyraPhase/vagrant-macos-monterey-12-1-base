@@ -235,13 +235,24 @@ Vagrant.configure("2") do |config|
     end
     libvirt.qemuargs :value => "-device"
     libvirt.qemuargs :value => "ich9-ahci,id=sata,addr=0x1f.4"
-
+    # Uncomment the following if using older vagrant-libvirt with the
+    # mouse/keyboard inputs bug
+    # Reference: https://github.com/vagrant-libvirt/vagrant-libvirt/issues/1092#issuecomment-728815017
+    # libvirt.inputs = []
+    # libvirt.usb_controller :model => "none"
     # If libvirt.input settings don't work... these do
     # See: https://github.com/vagrant-libvirt/vagrant-libvirt/issues/1092#issuecomment-1016003272
+#libvirt.qemuargs :value => "-device"
+#libvirt.qemuargs :value => '{ "driver": "qemu-xhci", "p2": 4, "p3": 2, "id": "usb", "bus": "pci.1", "addr":"0x2" }'
+#'-device', '
+#                         '"id":"usb","bus":"pci.0","addr":"0x2"}')
+# libvirt.qemuargs :value => "-usb"
     libvirt.qemuargs :value => "-device"
-    libvirt.qemuargs :value => "usb-tablet"
+    libvirt.qemuargs :value => '{ "driver": "usb-kbd" }'
+    #libvirt.qemuargs :value => '{ "driver": "usb-kbd", "id": "input1", "bus": "usb.0", "port": "2" }'
     libvirt.qemuargs :value => "-device"
-    libvirt.qemuargs :value => "usb-kbd"
+    libvirt.qemuargs :value => '{ "driver": "usb-tablet" }'
+    #libvirt.qemuargs :value => '{ "driver": "usb-tablet", "id":"input0", "bus":"usb.0","port":"1"}'
 
    # Network
    libvirt.management_network_pci_bus = '0x00'
