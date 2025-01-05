@@ -1,0 +1,93 @@
+BOX_DIR = File.expand_path(File.dirname(__FILE__))
+
+Vagrant.configure("2") do |config|
+
+  config.vm.provider :libvirt do |libvirt|
+
+    libvirt.driver = "kvm"
+    libvirt.host = ""
+    libvirt.connect_via_ssh = false
+    libvirt.storage_pool_name = "default"
+    libvirt.disk_bus = "virtio"
+    libvirt.video_vram = 256
+    libvirt.memory = 4096
+    libvirt.cpus = 4
+
+    libvirt.machine_type = "q35"
+
+    cpu_options = "+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,check"
+    libvirt.qemuargs :value => "-cpu"
+    libvirt.qemuargs :value => "Penryn,kvm=on,vendor=GenuineIntel,+invtsc,vmware-cpuid-freq=on,#{cpu_options}"
+
+#    libvirt.qemuargs :value => "-device"
+#    libvirt.qemuargs :value => "usb-ehci,id=ehci"
+#    libvirt.qemuargs :value => "-device"
+#    libvirt.qemuargs :value => "nec-usb-xhci,id=xhci"
+#    libvirt.qemuargs :value => "-global"
+#    libvirt.qemuargs :value => "nec-usb-xhci.msi=off"
+    libvirt.qemuargs :value => "-global" 
+    libvirt.qemuargs :value => 'ICH9-LPC.acpi-pci-hotplug-with-bridge-support=off'
+    libvirt.qemuargs :value => "-device" 
+    libvirt.qemuargs :value => 'isa-applesmc,osk=ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc'
+
+
+    libvirt.loader = "/usr/share/OVMF/x64/OVMF_CODE.fd"
+    libvirt.nvram = "" # Hope it autoselects & uses template: "/usr/share/OVMF/x64/OVMF_VARS.fd"
+
+## TODO: Try OS package provided versions but Default to pre-packaged .box directory versions
+    #libvirt.loader = "/usr/share/OVMF/OVMF_CODE.fd"
+    #libvirt.nvram = "/path/to/ovmf/OVMF_VARS.fd"
+    #libvirt.qemuargs :value => "-drive"
+    #libvirt.qemuargs :value => "file=#{BOX_DIR}/OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on"
+    #libvirt.qemuargs :value => "-drive"
+    #libvirt.qemuargs :value => "file=#{BOX_DIR}/OVMF_VARS-1024x768.fd,if=pflash,format=raw,unit=1"
+
+    libvirt.qemuargs :value => "-smbios"
+    libvirt.qemuargs :value => "type=2"
+
+## TODO: Convert all devices to JSON syntax b/c libvirt now converts all XML to JSON qemu args
+## Because we use libvirt, we are stuck with JSON now, since everything must now
+## be specified as JSON to prevent PCI device id conflicts
+## References:
+##  - https://forum.level1techs.com/t/error-starting-domain-pcie-root-port-in-use-by-ich9-intel-hda/180287
+##  - https://www.reddit.com/r/VFIO/comments/13epr5d/comment/jjre9gk/?utm_source=share&utm_medium=web2x&context=3
+    libvirt.qemuargs :value => "-audiodev"
+    libvirt.qemuargs :value => '{"driver":"pa","id":"audio1", "server": "unix:/run/user/1000/pulse/native", "out": {"mixing-engine": false} }'
+#    libvirt.qemuargs :value => '{"id":"audio1","driver":"none"}'
+    libvirt.qemuargs :value => "-device"
+    libvirt.qemuargs :value => '{ "driver": "ich9-intel-hda" }'
+    libvirt.qemuargs :value => "-device"
+    libvirt.qemuargs :value => '{ "driver": "hda-duplex", "audiodev": "audio1" }'
+    libvirt.qemuargs :value => "-device"
+    libvirt.qemuargs :value => '{ "driver": "ich9-ahci", "id": "sata" }'
+
+# Reference: https://github.com/vagrant-libvirt/vagrant-libvirt/issues/1092#issuecomment-728815017
+libvirt.inputs = []
+libvirt.usb_controller :model => "none"
+#libvirt.qemuargs :value => "-device"
+#libvirt.qemuargs :value => '{ "driver": "qemu-xhci", "p2": 15, "p3": 15, "id": "usb", "bus": "pci.1", "addr":"0x2" }'
+#'-device', '
+#                         '"id":"usb","bus":"pci.0","addr":"0x2"}')
+libvirt.qemuargs :value => "-usb"
+libvirt.qemuargs :value => "-device"
+libvirt.qemuargs :value => '{ "driver": "usb-kbd" }'
+#libvirt.qemuargs :value => '{ "driver": "usb-kbd", "id": "input1", "bus": "usb.0", "port": "2" }'
+libvirt.qemuargs :value => "-device"
+libvirt.qemuargs :value => '{ "driver": "usb-tablet" }'
+#libvirt.qemuargs :value => '{ "driver": "usb-tablet", "id":"input0", "bus":"usb.0","port":"1"}'
+
+#    libvirt.qemuargs :value => "-audiodev"
+#    libvirt.qemuargs :value => "pa,id=audio1,server=/run/user/1000/pulse/native,out.mixing-engine=off"
+
+#    libvirt.qemuargs :value => "-device"
+#    libvirt.qemuargs :value => "ich9-intel-hda"
+#    libvirt.qemuargs :value => "-device"
+#    libvirt.qemuargs :value => "hda-duplex,audiodev=audio1"
+#    libvirt.qemuargs :value => "-device"
+#    libvirt.qemuargs :value => "ich9-ahci,id=sata"
+  end
+
+  config.vm.box = "lyraphase-runner/macos-monterey-base"
+  config.vm.hostname = "macos-12-1.vagrantup.com"
+  config.vm.boot_timeout = 1200
+end
