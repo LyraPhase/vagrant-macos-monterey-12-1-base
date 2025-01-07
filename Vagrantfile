@@ -75,19 +75,25 @@ Vagrant.configure("2") do |config|
     libvirt.host = ""
     libvirt.connect_via_ssh = false
     libvirt.storage_pool_name = "default"
-#    libvirt.disk_bus = "virtio"
+    # libvirt.disk_bus = "virtio"
     libvirt.disk_bus = "sata"
     libvirt.disk_driver_opts = { cache:'writeback', io:'threads' }
-    #libvirt.volume =  ## TODO: Figure out if we need to declare volume settings for sata
+    # Set up TRIM support so qcow2 sparse image doesn't keep growing
+    # Reference: https://forums.unraid.net/topic/80691-guide-enable-trim-on-qemu-disk-in-macososx/
+    # libvirt.disk_driver_opts = { cache:'writeback', io:'threads' }
+    # libvirt.volume =  ## TODO: Figure out if we need to declare volume settings for sata
+    # vga device at pci.0 slot 0x01 function 0
+    # https://libvirt.org/pci-addresses.html#reserved-addresses
     libvirt.video_type = 'vga'
+    # libvirt.video_type = 'virtio'
     libvirt.video_vram = 65536
 
     # PS/2 Kbd & Mouse do not work on macOS
     ## Note: This did not work with vagrant-libvirt-0.7.0
     ## Had to override with qemuargs (See below)
-    #libvirt.inputs = []  # Force NO default PS/2 mouse
-    #libvirt.input :type => "tablet", :bus => "usb"
-    #libvirt.input :type => "keyboard", :bus => "usb"
+    # libvirt.inputs = []  # Force NO default PS/2 mouse
+    # libvirt.input :type => "tablet", :bus => "usb"
+    # libvirt.input :type => "keyboard", :bus => "usb"
 
     # Spice VMC via unix socket
     libvirt.graphics_type = 'spice'
@@ -103,7 +109,7 @@ Vagrant.configure("2") do |config|
 
     libvirt.cpu_mode = 'custom'
     libvirt.cpu_model = 'Penryn'
-#    libvirt.vendor = 'GenuineIntel'  ## Not yet supported by Vagrant XML template
+    # libvirt.vendor = 'GenuineIntel'  ## Not yet supported by Vagrant XML template
     libvirt.cputopology :sockets => CPU_SOCKETS, :cores => CPU_CORES, :threads => CPU_THREADS
 
     # USB
@@ -116,11 +122,11 @@ Vagrant.configure("2") do |config|
     libvirt.clock_timer :name => 'hpet', :present => 'no'
 
     ## This way of declaring clock_timers resulted in duplicated clocks
-     ## ¯\_(ツ)_/¯
-    #libvirt.clock_timers = [ {name: 'rtc', tickpolicy: 'catchup'},
+    ## ¯\_(ツ)_/¯
+    # libvirt.clock_timers = [ {name: 'rtc', tickpolicy: 'catchup'},
     #  {name: 'pit', tickpolicy: 'delay'},
     #  {name: 'hpet', present: 'no'}
-    #]
+    # ]
 
     ## CPU Features
 
@@ -134,6 +140,12 @@ Vagrant.configure("2") do |config|
     libvirt.machine_arch = "x86_64"
 
     # Serial pty
+    # For serial kprintf, set xnu kernel boot-args in OpenCore's config.plist:
+    #     debug=0x108 -v serial=3 msgbuf=1048576 serialbaud=115200
+    # References:
+    #   - https://github.com/acidanthera/bugtracker/issues/1954#issue-1140380896
+    #   - https://worthdoingbadly.com/xnuqemu/#providing-boot-args
+    #   - https://theapplewiki.com/wiki/Boot-args
     libvirt.serials = [ { type: 'pty' } ]
 
     # qemu-system-x86_64 -cpu
@@ -147,34 +159,36 @@ Vagrant.configure("2") do |config|
     libvirt.qemuargs :value => "cores=#{CPU_CORES},threads=#{CPU_THREADS},sockets=#{CPU_SOCKETS}"
     libvirt.qemuargs :value => "-device"
     libvirt.qemuargs :value => "usb-ehci,id=ehci,addr=0x1c.0"
+    # pci.0 slot 0x02.0 taken by pcie-root-port
     libvirt.qemuargs :value => "-device"
-    libvirt.qemuargs :value => "qemu-xhci,id=xhci,addr=0x1d.0,p2=4,p3=2"
-## Caused audio to crackle... seems qemu-xhci is more performant
-#    libvirt.qemuargs :value => "nec-usb-xhci,id=xhci,addr=0x1d.0"
-#    libvirt.qemuargs :value => "-global"
-#    libvirt.qemuargs :value => "nec-usb-xhci.msi=off"
+    libvirt.qemuargs :value => "qemu-xhci,id=xhci,addr=0x03.0,p2=4,p3=2"
+    # libvirt.qemuargs :value => '{ "driver": "qemu-xhci", "p2": 4, "p3": 2, "id": "xhci", "bus": "pci.1", "addr":"0x02" }'
+    ## Caused audio to crackle... seems qemu-xhci is more performant
+    # libvirt.qemuargs :value => "nec-usb-xhci,id=xhci,addr=0x1d.0"
+    # libvirt.qemuargs :value => "-global"
+    # libvirt.qemuargs :value => "nec-usb-xhci.msi=off"
     libvirt.qemuargs :value => "-device"
     libvirt.qemuargs :value => 'isa-applesmc,osk=ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc'
 
-    #libvirt.loader = '/usr/share/OVMF/x64/OVMF_CODE.4m.fd' ## Symlinked to edk2 path, but doesn't match libvirtd strict matching
+    # libvirt.loader = '/usr/share/OVMF/x64/OVMF_CODE.4m.fd' ## Symlinked to edk2 path, but doesn't match libvirtd strict matching
     ## Must match firmware paths in json: /usr/share/qemu/firmware/60-edk2-ovmf-x86_64-4m.json
     libvirt.loader = '/usr/share/edk2/x64/OVMF_CODE.4m.fd'
-    #libvirt.nvram = '/var/lib/libvirt/qemu/nvram/lyraphase-runner_macos-12-1_OVMF_VARS-1024x768.fd'
+    # libvirt.nvram = '/var/lib/libvirt/qemu/nvram/lyraphase-runner_macos-12-1_OVMF_VARS-1024x768.fd'
     libvirt.nvram_template = '/usr/share/edk2/x64/OVMF_VARS.4m.fd'
-## TODO: Try OS package provided versions but Default to pre-packaged .box directory versions
-#    libvirt.qemuargs :value => "-drive"
-#    libvirt.qemuargs :value => "file=#{BOX_DIR}/OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on"
-#    libvirt.qemuargs :value => "-drive"
-#    libvirt.qemuargs :value => "file=#{BOX_DIR}/OVMF_VARS-1024x768.fd,if=pflash,format=raw,unit=1"
+    ## TODO: Try OS package provided versions but Default to pre-packaged .box directory versions
+    # libvirt.qemuargs :value => "-drive"
+    # libvirt.qemuargs :value => "file=#{BOX_DIR}/OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on"
+    # libvirt.qemuargs :value => "-drive"
+    # libvirt.qemuargs :value => "file=#{BOX_DIR}/OVMF_VARS-1024x768.fd,if=pflash,format=raw,unit=1"
 
     libvirt.qemuargs :value => "-smbios"
     libvirt.qemuargs :value => "type=2"
-## TODO: Convert all devices to JSON syntax b/c libvirt now converts all XML to JSON qemu args
-## Because we use libvirt, we are stuck with JSON now, since everything must now
-## be specified as JSON to prevent PCI device id conflicts
-## References:
-##  - https://forum.level1techs.com/t/error-starting-domain-pcie-root-port-in-use-by-ich9-intel-hda/180287
-##  - https://www.reddit.com/r/VFIO/comments/13epr5d/comment/jjre9gk/?utm_source=share&utm_medium=web2x&context=3
+    ## TODO: Convert all devices to JSON syntax b/c libvirt now converts all XML to JSON qemu args
+    ## Because we use libvirt, we are stuck with JSON now, since everything must now
+    ## be specified as JSON to prevent PCI device id conflicts
+    ## References:
+    ##  - https://forum.level1techs.com/t/error-starting-domain-pcie-root-port-in-use-by-ich9-intel-hda/180287
+    ##  - https://www.reddit.com/r/VFIO/comments/13epr5d/comment/jjre9gk/?utm_source=share&utm_medium=web2x&context=3
     PIPEWIRE_REMOTE = ENV.fetch('PIPEWIRE_REMOTE', 'pipewire-0')
     PIPEWIRE_SOCKET = File.join(ENV['XDG_RUNTIME_DIR'], PIPEWIRE_REMOTE) unless ENV['XDG_RUNTIME_DIR'].nil?
     PULSEAUDIO_SOCKET = File.join(ENV['XDG_RUNTIME_DIR'], 'pulse', 'native') unless ENV['XDG_RUNTIME_DIR'].nil?
@@ -209,7 +223,7 @@ Vagrant.configure("2") do |config|
 
         libvirt.qemuargs :value => "-audiodev"
         libvirt.qemuargs :value => "id=snd0,driver=pipewire,#{DEFAULT_AUDIODEV_OPTIONS}"
-        #libvirt.qemuenv QEMU_AUDIO_DRV: 'pw'
+        # libvirt.qemuenv QEMU_AUDIO_DRV: 'pw'
         libvirt.qemuenv PIPEWIRE_DEBUG: 'D'
         libvirt.qemuenv PIPEWIRE_RUNTIME_DIR: ENV.fetch('XDG_RUNTIME_DIR', File.join('run', 'user', '1000'))
       when 'pulseaudio', 'pulse'
@@ -225,10 +239,10 @@ Vagrant.configure("2") do |config|
         # libvirt.qemuargs :value => "ich9-usb-uhci1,id=uhci,bus=pcie.0,addr=0x1b.0"
         libvirt.qemuargs :value => "-audiodev"
         libvirt.qemuargs :value => "id=snd0,driver=pa,server=unix:#{PULSEAUDIO_SOCKET},#{DEFAULT_AUDIODEV_OPTIONS}"
-      ## No working audio from ich9-intel-hda in macOS Monterey -> use usb-audio instead
-      #      libvirt.qemuargs :value => "ich9-intel-hda,id=hda1,bus=pcie.0,addr=0x1b.0"
-      #      libvirt.qemuargs :value => "-device"
-      #      libvirt.qemuargs :value => "hda-duplex,audiodev=audio1,bus=hda1.0,cad=0"
+        ## No working audio from ich9-intel-hda in macOS Monterey -> use usb-audio instead
+        # libvirt.qemuargs :value => "ich9-intel-hda,id=hda1,bus=pcie.0,addr=0x1b.0"
+        # libvirt.qemuargs :value => "-device"
+        # libvirt.qemuargs :value => "hda-duplex,audiodev=audio1,bus=hda1.0,cad=0"
       when 'none'
         logger.info "Using NO audio backend"
       end
@@ -242,11 +256,9 @@ Vagrant.configure("2") do |config|
     # libvirt.usb_controller :model => "none"
     # If libvirt.input settings don't work... these do
     # See: https://github.com/vagrant-libvirt/vagrant-libvirt/issues/1092#issuecomment-1016003272
-#libvirt.qemuargs :value => "-device"
-#libvirt.qemuargs :value => '{ "driver": "qemu-xhci", "p2": 4, "p3": 2, "id": "usb", "bus": "pci.1", "addr":"0x2" }'
-#'-device', '
-#                         '"id":"usb","bus":"pci.0","addr":"0x2"}')
-# libvirt.qemuargs :value => "-usb"
+    #'-device', '
+    #                         '"id":"usb","bus":"pci.0","addr":"0x2"}')
+    # libvirt.qemuargs :value => "-usb"
     libvirt.qemuargs :value => "-device"
     libvirt.qemuargs :value => '{ "driver": "usb-kbd" }'
     #libvirt.qemuargs :value => '{ "driver": "usb-kbd", "id": "input1", "bus": "usb.0", "port": "2" }'
@@ -255,6 +267,7 @@ Vagrant.configure("2") do |config|
     #libvirt.qemuargs :value => '{ "driver": "usb-tablet", "id":"input0", "bus":"usb.0","port":"1"}'
 
    # Network
+   # virtio-net-pci at pcie.0 slot 0x04
    libvirt.management_network_pci_bus = '0x00'
    libvirt.management_network_pci_slot = '0x04'
   end
