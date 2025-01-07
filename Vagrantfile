@@ -260,11 +260,11 @@ Vagrant.configure("2") do |config|
     #                         '"id":"usb","bus":"pci.0","addr":"0x2"}')
     # libvirt.qemuargs :value => "-usb"
     libvirt.qemuargs :value => "-device"
-    libvirt.qemuargs :value => '{ "driver": "usb-kbd" }'
-    #libvirt.qemuargs :value => '{ "driver": "usb-kbd", "id": "input1", "bus": "usb.0", "port": "2" }'
+    libvirt.qemuargs :value => '{ "driver": "usb-kbd", "bus": "ehci.0", "id": "input0", "port": "2" }'
+    # libvirt.qemuargs :value => '{ "driver": "usb-kbd", "id": "input1", "bus": "xhci.0", "port": "2" }'
     libvirt.qemuargs :value => "-device"
-    libvirt.qemuargs :value => '{ "driver": "usb-tablet" }'
-    #libvirt.qemuargs :value => '{ "driver": "usb-tablet", "id":"input0", "bus":"usb.0","port":"1"}'
+    libvirt.qemuargs :value => '{ "driver": "usb-tablet", "bus": "ehci.0", "id": "input1", "port": "3" }'
+    # libvirt.qemuargs :value => '{ "driver": "usb-tablet", "id":"input0", "bus":"xhci.0","port":"3"}'
 
    # Network
    # virtio-net-pci at pcie.0 slot 0x04
