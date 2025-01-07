@@ -161,7 +161,7 @@ Vagrant.configure("2") do |config|
     libvirt.qemuargs :value => "usb-ehci,id=ehci,addr=0x1c.0"
     # pci.0 slot 0x02.0 taken by pcie-root-port
     libvirt.qemuargs :value => "-device"
-    libvirt.qemuargs :value => "qemu-xhci,id=xhci,addr=0x03.0,p2=4,p3=2"
+    libvirt.qemuargs :value => "qemu-xhci,id=xhci,addr=0x1d.0,p2=4,p3=2"
     # libvirt.qemuargs :value => '{ "driver": "qemu-xhci", "p2": 4, "p3": 2, "id": "xhci", "bus": "pci.1", "addr":"0x02" }'
     ## Caused audio to crackle... seems qemu-xhci is more performant
     # libvirt.qemuargs :value => "nec-usb-xhci,id=xhci,addr=0x1d.0"
