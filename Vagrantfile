@@ -45,6 +45,9 @@ def audio_socket_exists?(s)
 end
 BOX_DIR = File.expand_path(File.dirname(__FILE__))
 
+UID = Process.uid.to_s || '1000'
+XDG_RUNTIME_DIR = ENV.fetch('XDG_RUNTIME_DIR', File.join('', 'run', 'user', UID))
+
 Vagrant.configure("2") do |config|
   config.ssh.insert_key = false if ENV.fetch('VAGRANT_PACKAGE', false).to_s == 'true'
 
@@ -189,16 +192,21 @@ Vagrant.configure("2") do |config|
     ##  - https://forum.level1techs.com/t/error-starting-domain-pcie-root-port-in-use-by-ich9-intel-hda/180287
     ##  - https://www.reddit.com/r/VFIO/comments/13epr5d/comment/jjre9gk/?utm_source=share&utm_medium=web2x&context=3
     PIPEWIRE_REMOTE = ENV.fetch('PIPEWIRE_REMOTE', 'pipewire-0')
-    PIPEWIRE_SOCKET = !ENV['XDG_RUNTIME_DIR'].nil? ? File.join(ENV['XDG_RUNTIME_DIR'], PIPEWIRE_REMOTE) : nil
-    PULSEAUDIO_SOCKET = !ENV['XDG_RUNTIME_DIR'].nil? ? File.join(ENV['XDG_RUNTIME_DIR'], 'pulse', 'native') : nil
+    PIPEWIRE_SOCKET = File.exist?(XDG_RUNTIME_DIR) ? File.join(XDG_RUNTIME_DIR, PIPEWIRE_REMOTE) : nil
+    PULSEAUDIO_SOCKET = File.exist?(XDG_RUNTIME_DIR) ? File.join(XDG_RUNTIME_DIR, 'pulse', 'native') : nil
 
     logger.debug "---------------------------------------------------------------------"
     logger.debug "ENV['XDG_RUNTIME_DIR'] = #{ENV['XDG_RUNTIME_DIR']}"
     logger.debug "ENV['XDG_RUNTIME_DIR'].nil? = #{ENV['XDG_RUNTIME_DIR'].nil?}"
+    logger.debug "UID = #{UID}"
+    logger.debug "XDG_RUNTIME_DIR = #{XDG_RUNTIME_DIR}"
     logger.debug "PIPEWIRE_REMOTE = #{PIPEWIRE_REMOTE}"
     logger.debug "PIPEWIRE_SOCKET = #{PIPEWIRE_SOCKET}"
     logger.debug "PULSEAUDIO_SOCKET = #{PULSEAUDIO_SOCKET}"
+    logger.debug "File.exist?(XDG_RUNTIME_DIR.exist) = #{File.exist?(XDG_RUNTIME_DIR)}"
     logger.debug "---------------------------------------------------------------------"
+
+    logger.warn "XDG_RUNTIME_DIR does not exist: #{XDG_RUNTIME_DIR}" unless File.exist?(XDG_RUNTIME_DIR)
 
     if audio_socket_exists?(PIPEWIRE_SOCKET) || audio_socket_exists?(PULSEAUDIO_SOCKET)
       # Default to pulseaudio
