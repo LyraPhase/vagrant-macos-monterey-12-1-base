@@ -145,7 +145,7 @@ Vagrant.configure("2") do |config|
     #   - https://github.com/acidanthera/bugtracker/issues/1954#issue-1140380896
     #   - https://worthdoingbadly.com/xnuqemu/#providing-boot-args
     #   - https://theapplewiki.com/wiki/Boot-args
-    libvirt.serials = [ { type: 'pty' } ]
+    #libvirt.serials = [ { type: 'pty' } ]
 
     # qemu-system-x86_64 -cpu
     #   +kvm_pv_unhalt,+kvm_pv_eoi,+hypervisor,+invtsc,+pcid,+popcnt,+avx,+avx2,+aes,+fma,+fma4,+bmi1,+bmi2,+xsave,+xsaveopt,check
@@ -211,6 +211,7 @@ Vagrant.configure("2") do |config|
       logger.debug "---------------------------------------------------------------------"
       logger.debug "config.vm.hostname = #{config.vm.hostname}"
       logger.debug "libvirt.default_prefix = #{libvirt.default_prefix}"
+      logger.debug "VAGRANT_LIBVIRT_AUDIO_BACKEND = #{VAGRANT_LIBVIRT_AUDIO_BACKEND}"
       logger.debug "audio_socket_exists?(PIPEWIRE_SOCKET) = #{audio_socket_exists?(PIPEWIRE_SOCKET)}"
       logger.debug "audio_socket_exists?(PULSEAUDIO_SOCKET) = #{audio_socket_exists?(PULSEAUDIO_SOCKET)}"
       logger.debug "---------------------------------------------------------------------"
