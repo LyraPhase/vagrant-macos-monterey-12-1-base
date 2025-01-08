@@ -189,8 +189,16 @@ Vagrant.configure("2") do |config|
     ##  - https://forum.level1techs.com/t/error-starting-domain-pcie-root-port-in-use-by-ich9-intel-hda/180287
     ##  - https://www.reddit.com/r/VFIO/comments/13epr5d/comment/jjre9gk/?utm_source=share&utm_medium=web2x&context=3
     PIPEWIRE_REMOTE = ENV.fetch('PIPEWIRE_REMOTE', 'pipewire-0')
-    PIPEWIRE_SOCKET = File.join(ENV['XDG_RUNTIME_DIR'], PIPEWIRE_REMOTE) unless ENV['XDG_RUNTIME_DIR'].nil?
-    PULSEAUDIO_SOCKET = File.join(ENV['XDG_RUNTIME_DIR'], 'pulse', 'native') unless ENV['XDG_RUNTIME_DIR'].nil?
+    PIPEWIRE_SOCKET = !ENV['XDG_RUNTIME_DIR'].nil? ? File.join(ENV['XDG_RUNTIME_DIR'], PIPEWIRE_REMOTE) : nil
+    PULSEAUDIO_SOCKET = !ENV['XDG_RUNTIME_DIR'].nil? ? File.join(ENV['XDG_RUNTIME_DIR'], 'pulse', 'native') : nil
+
+    logger.debug "---------------------------------------------------------------------"
+    logger.debug "ENV['XDG_RUNTIME_DIR'] = #{ENV['XDG_RUNTIME_DIR']}"
+    logger.debug "ENV['XDG_RUNTIME_DIR'].nil? = #{ENV['XDG_RUNTIME_DIR'].nil?}"
+    logger.debug "PIPEWIRE_REMOTE = #{PIPEWIRE_REMOTE}"
+    logger.debug "PIPEWIRE_SOCKET = #{PIPEWIRE_SOCKET}"
+    logger.debug "PULSEAUDIO_SOCKET = #{PULSEAUDIO_SOCKET}"
+    logger.debug "---------------------------------------------------------------------"
 
     if audio_socket_exists?(PIPEWIRE_SOCKET) || audio_socket_exists?(PULSEAUDIO_SOCKET)
       # Default to pulseaudio
