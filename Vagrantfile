@@ -77,10 +77,9 @@ Vagrant.configure("2") do |config|
     libvirt.storage_pool_name = "default"
     # libvirt.disk_bus = "virtio"
     libvirt.disk_bus = "sata"
-    libvirt.disk_driver_opts = { cache:'writeback', io:'threads' }
     # Set up TRIM support so qcow2 sparse image doesn't keep growing
     # Reference: https://forums.unraid.net/topic/80691-guide-enable-trim-on-qemu-disk-in-macososx/
-    # libvirt.disk_driver_opts = { cache:'writeback', io:'threads' }
+    libvirt.disk_driver_opts = { cache:'writeback', io:'threads', discard:'unmap', detect_zeroes:'unmap' }
     # libvirt.volume =  ## TODO: Figure out if we need to declare volume settings for sata
     # vga device at pci.0 slot 0x01 function 0
     # https://libvirt.org/pci-addresses.html#reserved-addresses
@@ -249,6 +248,11 @@ Vagrant.configure("2") do |config|
     end
     libvirt.qemuargs :value => "-device"
     libvirt.qemuargs :value => "ich9-ahci,id=sata,addr=0x1f.4"
+    # Set rotation_rate=1 so MacOS sees the main disk as SSD
+    # TODO: Did not work!  We need to enable <target ... rotation_rate='1'/>
+    #       support in vagrant-libvirt's domain.xml.erb template
+    # libvirt.qemuargs :value => "-set"
+    # libvirt.qemuargs :value => "device.ua-box-volume-0.rotation_rate=1"
     # Uncomment the following if using older vagrant-libvirt with the
     # mouse/keyboard inputs bug
     # Reference: https://github.com/vagrant-libvirt/vagrant-libvirt/issues/1092#issuecomment-728815017
