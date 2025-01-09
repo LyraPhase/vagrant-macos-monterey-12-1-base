@@ -210,7 +210,7 @@ Vagrant.configure("2") do |config|
 
     if audio_socket_exists?(PIPEWIRE_SOCKET) || audio_socket_exists?(PULSEAUDIO_SOCKET)
       # Default to pulseaudio
-      VAGRANT_LIBVIRT_AUDIO_BACKEND = ENV.fetch('VAGRANT_LIBVIRT_AUDIO_BACKEND', 'pulseaudio')
+      VAGRANT_LIBVIRT_AUDIO_BACKEND = ENV.fetch('VAGRANT_PACKAGE', false) == 'true' ? 'none' : ENV.fetch('VAGRANT_LIBVIRT_AUDIO_BACKEND', 'pulseaudio')
       unless VAGRANT_LIBVIRT_AUDIO_BACKEND == 'none'
         libvirt.qemuargs :value => "-device"
         libvirt.qemuargs :value => "usb-audio,id=usbaudio1,audiodev=snd0,bus=xhci.0"
