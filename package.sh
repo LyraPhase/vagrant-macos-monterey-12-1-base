@@ -21,4 +21,8 @@ box_filename=${1:-lyraphase-runner-macos-monterey-12-1-base.box}
 
 # Tell Vagrantfile to avoid replacing SSH key & syncing Shared Folders
 export VAGRANT_PACKAGE='true'
+# Disable virt-sysprep, as it does not yet support macOS guests
+# Reference: https://github.com/libguestfs/libguestfs/issues/166#issuecomment-2577381103
+export VAGRANT_LIBVIRT_VIRT_SYSPREP_OPTIONS='--dry-run'
+export VAGRANT_LIBVIRT_VIRT_SYSPREP_OPERATIONS='-defaults'
 vagrant package --vagrantfile Vagrantfile  --info info.json  --include README.md,LICENSE-macOSMonterey.pdf,OVMF_CODE.4m.fd,OVMF_VARS.4m.fd  --output "$box_filename"
