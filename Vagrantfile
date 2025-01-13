@@ -43,6 +43,11 @@ ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
 def audio_socket_exists?(s)
   return !s.nil? && File.exist?(s) && File.socket?(s)
 end
+
+def valid_nfs_vers?(ver)
+  return (ver.is_a?(Integer) && ver >= 2 && ver <= 4)
+end
+
 BOX_DIR = File.expand_path(File.dirname(__FILE__))
 
 UID = Process.uid.to_s || '1000'
@@ -318,8 +323,35 @@ Vagrant.configure("2") do |config|
 
   # macOS root FS is Read-Only... disable default /vagrant share, re-map to /tmp/vagrant
   config.vm.synced_folder ".", "/vagrant", disabled: true
-  do_nfs_export = (ENV.fetch('VAGRANT_NFS_EXPORT', true) == 'true')
-  config.vm.synced_folder ".", "/tmp/vagrant", nfs_version: 4, nfs_export: do_nfs_export unless ENV.fetch('VAGRANT_PACKAGE', false) == 'true'
+
+  VAGRANT_SHARED_FOLDER_BACKEND = ENV.fetch('VAGRANT_SHARED_FOLDER_BACKEND', 'nfs')
+  logger.debug "VAGRANT_SHARED_FOLDER_BACKEND = #{VAGRANT_SHARED_FOLDER_BACKEND}"
+
+  unless ENV.fetch('VAGRANT_PACKAGE', false).to_s.downcase == 'true'
+    case VAGRANT_SHARED_FOLDER_BACKEND
+    when 'auto'
+      config.vm.synced_folder ".", "/tmp/vagrant"
+    when 'nfs'
+      do_nfs_export = (ENV.fetch('VAGRANT_NFS_EXPORT', true) == 'true')
+      nfs_version = ENV.fetch('VAGRANT_NFS_VERSION', '4').to_i
+      logger.debug "VAGRANT_NFS_VERSION = #{nfs_version}"
+      logger.debug "valid_nfs_vers?(VAGRANT_NFS_VERSION) = #{valid_nfs_vers?(nfs_version)}"
+      if valid_nfs_vers?(nfs_version)
+        config.vm.synced_folder ".", "/tmp/vagrant", type: 'nfs', nfs_version: nfs_version, nfs_export: do_nfs_export
+      else
+        logger.warn "Invalid NFS version given: #{nfs_version}.  Falling back to default version 4"
+        config.vm.synced_folder ".", "/tmp/vagrant", type: 'nfs', nfs_version: 4, nfs_export: do_nfs_export
+      end
+    when 'smb'
+      config.vm.synced_folder ".", "/tmp/vagrant", type: 'smb'
+    when 'rsync'
+      config.vm.synced_folder ".", "/tmp/vagrant", type: 'rsync'
+    when 'rsync'
+      config.vm.synced_folder ".", "/tmp/vagrant", type: 'virtualbox'
+    when 'none'
+      # do nothing
+    end
+  end
 end
 
 
