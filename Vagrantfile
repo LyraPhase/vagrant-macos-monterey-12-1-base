@@ -147,12 +147,19 @@ Vagrant.configure("2") do |config|
     libvirt.machine_arch = "x86_64"
 
     # Serial pty
-    # For serial kprintf, set xnu kernel boot-args in OpenCore's config.plist:
-    #     debug=0x108 -v serial=3 msgbuf=1048576 serialbaud=115200
+    # For serial printf & kprintf, set xnu kernel boot-args in OpenCore's config.plist:
+    #     debug=0x10A -v serial=3 msgbuf=1048576 serialbaud=115200
+    # For kernel debugging, set debug= to logical OR of flags in: osfmk/kern/debug.h
+    # Example: Listen on en4 with DB_ARP debug across subnets enabled,
+    #          relaxed kernel module signing & NMI keys as trigger.
+    #          Sending console output to serial
+    #     debug=0x14e -v serial=3 msgbuf=1048576 serialbaud=115200 kext-dev-mode=1 kdp_match_name=en4
     # References:
     #   - https://github.com/acidanthera/bugtracker/issues/1954#issue-1140380896
     #   - https://worthdoingbadly.com/xnuqemu/#providing-boot-args
     #   - https://theapplewiki.com/wiki/Boot-args
+    #   - https://www.lightbulbone.com/posts/2016/10/intro-to-macos-kernel-debugging/
+    #   - https://web.archive.org/web/20250113224543/https://wikileaks.org/ciav7p1/cms/page_39550992.html
     #libvirt.serials = [ { type: 'pty' } ]
 
     # qemu-system-x86_64 -cpu
