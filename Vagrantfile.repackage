@@ -1,0 +1,10 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |c|
+  c.vm.box = "lyraphase-runner/macos-monterey-base"
+  c.vm.provider :libvirt do |p|
+    p.uri = 'qemu:///system'
+    p.system_uri = 'qemu:///system'
+  end
+end
